@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Math!</title>
+    <script src="../leap.min.js"></script>
+ 
+  <style>
+    html, body {
+      width: 100%;
+      height:100%;
+      margin: 0;
+      padding: 0;
+      background: #666;
+      color: #fff;
+    }
+    #wrap {
+      width: 600px;
+      margin: 0 auto;
+    }
+    .half {
+      width: 50%;
+      margin-top: 100px;
+      float: left;
+    }
+    div {
+      text-align: center;
+      font-size: 60px;
+      font-family: Helvetica, Arial, sans-serif;
+    }
+    #hands,
+    #fingers {
+      font-weight: bold;
+      font-size: 200px;
+    }
+    #handData div {
+      font-size: 12px;
+    }
+  </style>
+
+  <style>
+    html, body { width: 100%; height: 100%; margin: 0; padding: 0}
+    #leap-overlay { position: fixed; top: 0; left: 0;}
+  </style>
+</head>
+<body>
+
+  <div id="wrap">
+    <div class="half">
+      <div id="hands">2</div>
+      <div id="description-hands">hands</div>
+    </div>
+    <div class="half">
+      <div id="fingers">10</div>
+      <div id="description-fingers">fingers</div>
+    </div>
+  </div>
+ <div id="handData"></div>
+  <script>
+    var handsDiv = document.getElementById("hands");
+    var fingersDiv = document.getElementById("fingers");
+
+    var handsDesc = document.getElementById("description-hands");
+    var fingersDesc = document.getElementById("description-fingers");
+
+    Leap.loop(function(obj) {
+      var hands = obj.hands.length;
+      var fingers = obj.pointables.length;
+
+      //If more than 2 "hands" are detected, it will still only say 2 hands
+      if (hands>2) {
+        hands = 2;
+      };
+
+      handsDiv.innerHTML = hands;
+      fingersDiv.innerHTML = fingers;
+
+      var a = hands == 1 ? "hand" : "hands";
+      var b = fingers == 1 ? "finger" : "fingers";
+
+      handsDesc.innerHTML = a;
+      fingersDesc.innerHTML = b;
+
+      //document.title = [hands, a, fingers, b].join(" ");
+    });
+  </script>
+
+  <canvas id="leap-overlay"></canvas>
+  <script>
+    var fingerCanvas = document.getElementById("leap-overlay");
+    // Fullscreen
+    fingerCanvas.width = document.body.clientWidth;
+    fingerCanvas.height = document.body.clientHeight;
+
+    // Create a rendering context
+    var ctx = fingerCanvas.getContext("2d");
+    ctx.translate(fingerCanvas.width/2,fingerCanvas.height);
+    // set arc color in advance
+
+
+    // Render each frame
+    function draw(obj) {
+      // Clear last frame
+      ctx.clearRect(-fingerCanvas.width/2,-fingerCanvas.height,fingerCanvas.width,fingerCanvas.height);
+
+      // Display Hand object data
+      var handOutput = document.getElementById("handData");
+      var handString = "";
+      if (obj.hands.length > 0) {
+        // This loop runs for each hand
+        for (var i = 0; i < obj.hands.length; i++) {
+          var hand = obj.hands[i];
+          var handNumber = i;
+          console.log(i);
+          console.log(handNumber);
+
+          handString += "<div style='width:300px; float:left; padding:5px'>";
+          handString += "Hand ID: " + hand.id + "<br />";
+
+          // Set pointable color per hand
+          if (handNumber==0) {
+            ctx.fillStyle = "rgba(0,0,0,0.7)";
+          }
+          else if (handNumber=1) {
+            ctx.fillStyle = "#663333";
+          }
+          else {
+            ctx.fillStyle = "#003300";
+          }
+
+          // IDs of pointables (fingers and tools) associated with this hand
+          if (hand.pointables.length > 0) {
+            var fingerIds = [];
+            var toolIds = [];
+
+            // Loops per pointable for a hand
+            for (var j = 0; j < hand.pointables.length; j++) {
+              var pointable = hand.pointables[j];
+              if (pointable.tool) {
+                toolIds.push(pointable.id);
+              }
+              else {
+                fingerIds.push(pointable.id);
+              }
+
+              // Draw pointable
+              var pos = pointable.tipPosition;
+              var radius = Math.min(1000/Math.abs(pos[2]),20);
+              ctx.beginPath();
+              ctx.arc(pos[0]-radius/2,-pos[1]-radius/2,radius,0,2*Math.PI);
+              ctx.fill();
+
+            }
+            if (fingerIds.length > 0) {
+              handString += "Fingers IDs: " + fingerIds.join(", ") + "<br />";
+            }
+            if (toolIds.length > 0) {
+              handString += "Tools IDs: " + toolIds.join(", ") + "<br />";
+            }
+          }
+
+          handString += "</div>";
+        }
+      }
+      /* else {
+        handString += "No hands";
+      } */
+      
+      // Show a little div of descriptive text about hand being sensed
+      handOutput.innerHTML = handString;
+
+      // Render circles based on pointable positions
+      var pointablesMap = obj.pointablesMap;
+
+      /* for (var i in pointablesMap) {
+        // Get the pointable's position
+        var pointable = pointablesMap[i];
+        var pos = pointable.tipPosition;
+
+        // console.log(pointable.handId);
+
+
+        // Create a circle for each pointable
+        var radius = Math.min(1000/Math.abs(pos[2]),20);
+        ctx.beginPath();
+        ctx.arc(pos[0]-radius/2,-pos[1]-radius/2,radius,0,2*Math.PI);
+        ctx.fill();
+      } */
+    };
+
+    // Listen to Leap Motion and loop
+    Leap.loop(draw);
+
+     /* Notes
+      Use pointable.handId
+
+      pointablemap1
+      pointablemap2
+      creating as new hands are detected and lost
+    */
+  </script>
+
+</body>
+</html>
